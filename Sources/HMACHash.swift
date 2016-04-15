@@ -1,0 +1,62 @@
+#if os(Linux)
+    import GLibc
+#else
+    import Darwin.C
+#endif
+
+import COpenSSL
+import Data
+
+public enum HashType {
+    case SHA1, SHA224, SHA256, SHA384, SHA512
+}
+
+internal extension HashType {
+    var evp: UnsafePointer<EVP_MD> {
+        switch self {
+        case .SHA1:
+            return EVP_sha1()
+        case .SHA224:
+            return EVP_sha224()
+        case .SHA256:
+            return EVP_sha256()
+        case .SHA384:
+            return EVP_sha384()
+        case .SHA512:
+            return EVP_sha512()
+        }
+    }
+}
+
+public struct HMACHash {
+    private static func _initialize() {
+        SSL_library_init()
+        SSL_load_error_strings()
+        ERR_load_crypto_strings()
+        OPENSSL_config(nil)
+    }
+    
+    init() {
+        _ = HMACHash._initialize()
+    }
+    
+    public func hmac(type: HashType, key: String, data: String) -> Data {
+        let keyData = Data(key)
+        let dataData = Data(data)
+        var resultLen: UInt32 = 0
+        let result = UnsafeMutablePointer<UInt8>.alloc(Int(EVP_MAX_MD_SIZE))
+        keyData.withUnsafeBufferPointer { keyPtr in
+            dataData.withUnsafeBufferPointer { dataPtr in
+                HMAC(type.evp,
+                     keyPtr.baseAddress, Int32(keyData.count),
+                     dataPtr.baseAddress, dataPtr.count,
+                     result, &resultLen)
+            }
+        }
+        
+        let resultData = Data(Array(UnsafeBufferPointer<Byte>(start: result, count: Int(resultLen))))
+        result.destroy(Int(resultLen))
+        result.dealloc(Int(EVP_MAX_MD_SIZE))
+        return resultData
+    }
+}
