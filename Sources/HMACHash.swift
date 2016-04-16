@@ -36,7 +36,7 @@ public struct HMACHash {
         OPENSSL_config(nil)
     }
     
-    init() {
+    public init() {
         _ = HMACHash._initialize()
     }
     
