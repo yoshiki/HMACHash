@@ -1,5 +1,5 @@
 #if os(Linux)
-    import GLibc
+    import Glibc
 #else
     import Darwin.C
 #endif
@@ -35,11 +35,11 @@ public struct HMACHash {
         ERR_load_crypto_strings()
         OPENSSL_config(nil)
     }
-    
+
     public init() {
         _ = HMACHash._initialize()
     }
-    
+
     public func hmac(type: HashType, key: String, data: String) -> Data {
         let keyData = Data(key)
         let dataData = Data(data)
@@ -53,7 +53,7 @@ public struct HMACHash {
                      result, &resultLen)
             }
         }
-        
+
         let resultData = Data(Array(UnsafeBufferPointer<Byte>(start: result, count: Int(resultLen))))
         result.destroy(Int(resultLen))
         result.dealloc(Int(EVP_MAX_MD_SIZE))
