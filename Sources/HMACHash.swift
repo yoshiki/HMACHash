@@ -5,7 +5,8 @@
 #endif
 
 import COpenSSL
-import Data
+import struct C7.Data
+import typealias C7.Byte
 
 public enum HashType {
     case SHA1, SHA224, SHA256, SHA384, SHA512
@@ -44,7 +45,7 @@ public struct HMACHash {
         let keyData = Data(key)
         let dataData = Data(data)
         var resultLen: UInt32 = 0
-        let result = UnsafeMutablePointer<UInt8>.alloc(Int(EVP_MAX_MD_SIZE))
+        let result = UnsafeMutablePointer<UInt8>(allocatingCapacity: Int(EVP_MAX_MD_SIZE))
         keyData.withUnsafeBufferPointer { keyPtr in
             dataData.withUnsafeBufferPointer { dataPtr in
                 HMAC(type.evp,
@@ -55,8 +56,8 @@ public struct HMACHash {
         }
 
         let resultData = Data(Array(UnsafeBufferPointer<Byte>(start: result, count: Int(resultLen))))
-        result.destroy(Int(resultLen))
-        result.dealloc(Int(EVP_MAX_MD_SIZE))
+        result.deinitialize(count: Int(resultLen))
+        result.deallocateCapacity(Int(EVP_MAX_MD_SIZE))
         return resultData
     }
 }
